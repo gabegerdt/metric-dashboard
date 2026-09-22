@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App portfolio health — (Demo) Pendo Experience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#10151b;
+    --panel:#171e26;
+    --panel2:#1c2530;
+    --border:#2a3542;
+    --text:#e7ebef;
+    --muted:#8b98a6;
+    --faint:#5c6774;
+    --risk:#c4483d;
+    --watch:#d9a44a;
+    --healthy:#4fae84;
+    --grey-line:#465061;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+  .num{font-family:'IBM Plex Mono',monospace;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 64px;}
+
+  header{margin-bottom:28px;}
+  .kicker{color:var(--muted);font-size:13px;margin:0 0 10px;}
+  h1{font-size:32px;line-height:1.18;margin:0 0 10px;font-weight:600;letter-spacing:-0.01em;}
+  .subhead{color:var(--muted);font-size:14.5px;max-width:660px;line-height:1.5;margin:0 0 22px;}
+
+  .kpirow{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .kpi{background:var(--panel);padding:16px 18px;}
+  .kpi .label{color:var(--muted);font-size:12px;margin-bottom:8px;}
+  .kpi .value{font-size:22px;font-weight:600;}
+  .kpi .value.risk{color:var(--risk);}
+  .kpi .value.watch{color:var(--watch);}
+
+  section{margin-top:40px;}
+  h2{font-size:17px;font-weight:600;margin:0 0 4px;}
+  .sectiontag{color:var(--muted);font-size:13px;margin:0 0 16px;}
+
+  .tablewrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:920px;}
+  thead th{text-align:left;color:var(--muted);font-weight:500;font-size:12px;padding:0 12px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody td{padding:13px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--panel2);}
+
+  .status{display:flex;align-items:center;gap:7px;font-size:13px;white-space:nowrap;}
+  .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .dot.risk{background:var(--risk);}
+  .dot.watch{background:var(--watch);}
+  .dot.healthy{background:var(--healthy);}
+
+  .appname{font-weight:500;white-space:nowrap;}
+  .delta{font-size:12px;margin-left:6px;white-space:nowrap;}
+  .delta.up{color:var(--healthy);}
+  .delta.down{color:var(--risk);}
+  .delta.flat{color:var(--muted);}
+  .note{color:var(--muted);font-size:12.5px;min-width:220px;}
+
+  .chartgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;}
+  @media (max-width:860px){.chartgrid{grid-template-columns:1fr;} .kpirow{grid-template-columns:repeat(2,1fr);}}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 22px;}
+  .panel h3{font-size:14px;font-weight:600;margin:0 0 2px;}
+  .panel .panelsub{color:var(--muted);font-size:12px;margin:0 0 16px;}
+  .chartwrap{position:relative;height:260px;}
+  .chartwrap.tall{height:340px;}
+  .chartwrap.short{height:230px;}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:14px;height:2px;display:inline-block;border-radius:1px;}
+
+  footer{margin-top:46px;padding-top:22px;border-top:1px solid var(--border);}
+  footer h3{font-size:13px;color:var(--muted);font-weight:500;margin:0 0 10px;}
+  footer ul{margin:0;padding-left:18px;color:var(--faint);font-size:12.5px;line-height:1.7;}
+  footer li{margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="kicker">App portfolio health — (Demo) Pendo Experience</p>
+    <h1>4 of 11 apps need attention</h1>
+    <p class="subhead">Every app inside the (Demo) Pendo Experience subscription, scored from active-visitor trend and new-visitor acquisition — the same data every app generates on install, no tagging required. Average daily time on app is shown per app below.</p>
+    <div class="kpirow" id="kpirow"></div>
+  </header>
+
+  <section>
+    <h2>Roster, sorted by risk</h2>
+    <p class="sectiontag">30-day snapshot ending Sep 14, 2026 · trend covers 13 completed weeks</p>
+    <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>App</th>
+          <th>Active visitors (30d)</th>
+          <th>Avg daily time on app</th>
+          <th>13-wk trend</th>
+          <th>New visitors (Aug)</th>
+          <th>Friction rate</th>
+          <th>Why</th>
+        </tr>
+      </thead>
+      <tbody id="roster"></tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="chartgrid">
+      <div class="panel">
+        <h3>Growth index — 5 apps with a steady baseline, indexed to week of Jun 14 = 100</h3>
+        <p class="panelsub">The other 6 apps in this subscription start from zero or single-digit weeks, so a shared index would be meaningless for them — they're broken out separately.</p>
+        <div class="chartwrap"><canvas id="growthChart"></canvas></div>
+        <div class="legend">
+          <span><i style="background:var(--watch)"></i>AcmeCRM iOS (watch)</span>
+          <span><i style="background:var(--watch)"></i>AcmeMarketing (watch)</span>
+          <span><i style="background:var(--grey-line)"></i>Acme CRM, AcmeTravel, AcmeInvestments (healthy)</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Low-adoption pilots</h3>
+        <p class="panelsub">30-day active visitors for the 6 apps that never gained real traction. Two (Acme HR, AcmeJapan) are brand-new rollouts, not declines — the rest have been live for months at this level.</p>
+        <div class="chartwrap short"><canvas id="pilotsChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <h3>New visitors by app — last full month (August 2026)</h3>
+      <p class="panelsub">Acquisition health at a glance, sorted highest to lowest.</p>
+      <div class="chartwrap tall"><canvas id="acqChart"></canvas></div>
+    </div>
+  </section>
+
+  <footer>
+    <h3>How this was built</h3>
+    <ul>
+      <li>Every number, including average daily time on app, comes from three Pendo MCP tools — <strong>appUsage</strong>, <strong>appUsageTimeSeries</strong>, and <strong>acquisitionTrend</strong> — computed off visits the Pendo agent captures automatically. No app team tagged a Page, Feature, or Core Event to make this data exist.</li>
+      <li>Average daily time on app is Pendo's <code>avgDailyActiveTime</code>: total active time divided across active days, for the trailing 30 days.</li>
+      <li>Status: <strong>at risk</strong> = usage has stayed near-zero for months, or fell sharply. <strong>Watch</strong> = a meaningful directional shift (declining acquisition or visitors, or a brand-new app still ramping) that isn't yet a settled trend. <strong>Healthy</strong> = neither.</li>
+      <li>The current week (Sep 13–14) and current month (September) are still in progress and excluded from trend math to avoid a misleading partial-period dip.</li>
+      <li>Six apps here run on single or low-double-digit visitor counts, so their percentage swings and friction rates carry more statistical noise than the three larger apps.</li>
+      <li>Scoped to the (Demo) Pendo Experience subscription only — no cross-subscription totals in this view.</li>
+    </ul>
+  </footer>
+
+</div>
+
+<script>
+const WEEK_LABELS = ["Jun 14","Jun 21","Jun 28","Jul 5","Jul 12","Jul 19","Jul 26","Aug 2","Aug 9","Aug 16","Aug 23","Aug 30","Sep 6"];
+const COLORS = { risk:"#c4483d", watch:"#d9a44a", healthy:"#4fae84", grey:"#465061" };
+
+const apps = [
+  { name:"Acme CRM", visitors:5042, accounts:79, events:924655, frustration:1308, avgTime:"8m 28s", avgTimeSec:508.4,
+    weekly:[1326,1257,1242,1233,1319,1264,1210,1259,1281,1266,1297,1302,1278],
+    monthly:[4700,4629,4491,4757,4859,4498], status:"healthy", growthEligible:true,
+    note:"Flagship app: stable, largest active base" },
+  { name:"AcmeInsurance", visitors:26, accounts:19, events:147, frustration:0, avgTime:"1m 21s", avgTimeSec:80.77,
+    weekly:[0,4,2,3,6,2,2,0,1,8,5,10,3],
+    monthly:[18,11,5,7,5,16], status:"risk", growthEligible:false,
+    note:"Minimal, erratic adoption after 6 months live" },
+  { name:"AcmeTravel", visitors:426, accounts:96, events:26404, frustration:1390, avgTime:"3m 21s", avgTimeSec:200.9,
+    weekly:[91,60,41,46,100,78,65,61,57,83,152,93,114],
+    monthly:[796,118,117,105,123,179], status:"healthy", growthEligible:true,
+    note:"Growing steadily, up ~88% this quarter" },
+  { name:"Acme HR", visitors:12, accounts:11, events:61, frustration:0, avgTime:"1m 5s", avgTimeSec:65,
+    weekly:[0,0,0,0,0,0,0,0,0,5,0,4,2],
+    monthly:[0,0,0,0,0,8], status:"watch", growthEligible:false,
+    note:"Brand new (mid-Aug launch), adoption not yet established" },
+  { name:"AcmeCRM iOS", visitors:76, accounts:48, events:1236, frustration:0, avgTime:"1m 40s", avgTimeSec:100.3,
+    weekly:[19,46,22,15,32,18,33,36,19,15,26,13,22],
+    monthly:[88,40,54,94,70,69], status:"watch", growthEligible:true,
+    note:"Active visitors down ~30% this quarter" },
+  { name:"Adopt For Partner Analytics", visitors:1, accounts:1, events:7, frustration:0, avgTime:"1m", avgTimeSec:60,
+    weekly:[1,0,0,0,0,0,0,0,0,0,0,0,1],
+    monthly:[0,0,0,1,0,0], status:"risk", growthEligible:false,
+    note:"Single visitor, no real adoption (internal test app)" },
+  { name:"Partner Analytics for Pendo UI", visitors:1, accounts:1, events:205, frustration:12, avgTime:"2m 20s", avgTimeSec:140,
+    weekly:[0,0,0,1,0,1,0,0,1,1,0,1,0],
+    monthly:[0,0,0,0,1,1], status:"risk", growthEligible:false,
+    note:"Single visitor, sporadic testing only" },
+  { name:"AcmeJapan", visitors:11, accounts:11, events:85, frustration:3, avgTime:"1m 20s", avgTimeSec:80,
+    weekly:[0,0,0,0,0,0,0,0,0,4,0,7,1],
+    monthly:[0,0,0,0,0,6], status:"watch", growthEligible:false,
+    note:"Brand new (mid-Aug launch), still ramping" },
+  { name:"AcmeMarketing", visitors:268, accounts:63, events:2106, frustration:27, avgTime:"2m 24s", avgTimeSec:144.1,
+    weekly:[52,98,67,58,76,79,75,87,80,58,74,66,86],
+    monthly:[103,122,120,120,98,79], status:"watch", growthEligible:true,
+    note:"New-visitor acquisition down 35% since April" },
+  { name:"AcmeInvestments", visitors:835, accounts:27, events:43855, frustration:36, avgTime:"2m 10s", avgTimeSec:129.7,
+    weekly:[200,195,207,203,208,201,202,199,205,214,194,201,197],
+    monthly:[873,870,827,864,924,837], status:"healthy", growthEligible:true,
+    note:"Large, very stable usage all quarter" },
+  { name:"AcmeEHR", visitors:21, accounts:18, events:513, frustration:12, avgTime:"2m 6s", avgTimeSec:125.7,
+    weekly:[1,13,1,2,14,3,1,1,2,10,0,8,3],
+    monthly:[18,11,7,21,12,13], status:"risk", growthEligible:false,
+    note:"Minimal, inconsistent adoption after 6 months live" },
+];
+
+const statusOrder = { risk:0, watch:1, healthy:2 };
+const statusLabel = { risk:"At risk", watch:"Watch", healthy:"Healthy" };
+
+apps.forEach(a=>{
+  a.friction = a.frustration / a.events;
+  const aug = a.monthly[5], jul = a.monthly[4];
+  a.momPct = jul ? (aug-jul)/jul*100 : null;
+});
+
+const totalVisitors = apps.reduce((s,a)=>s+a.visitors,0);
+const weightedTimeSec = apps.reduce((s,a)=>s+a.avgTimeSec*a.visitors,0)/totalVisitors;
+const counts = apps.reduce((o,a)=>{o[a.status]++;return o;},{risk:0,watch:0,healthy:0});
+
+function fmtSeconds(s){
+  const m = Math.floor(s/60), sec = Math.round(s%60);
+  return sec>0 ? `${m}m ${sec}s` : `${m}m`;
+}
+
+const kpis = [
+  { label:"Apps monitored", value: apps.length, cls:"" },
+  { label:"At risk", value: counts.risk, cls:"risk" },
+  { label:"Watch", value: counts.watch, cls:"watch" },
+  { label:"Active visitors (30d)", value: totalVisitors.toLocaleString(), cls:"" },
+  { label:"Avg daily time on app", value: fmtSeconds(weightedTimeSec), cls:"" },
+];
+document.getElementById("kpirow").innerHTML = kpis.map(k=>`
+  <div class="kpi"><div class="label">${k.label}</div><div class="value ${k.cls} num">${k.value}</div></div>
+`).join("");
+
+function sparkline(weekly, color){
+  const w=120,h=32,pad=3;
+  const min=Math.min(...weekly), max=Math.max(...weekly);
+  const range = (max-min)||1;
+  const pts = weekly.map((v,i)=>{
+    const x = pad + i*((w-2*pad)/(weekly.length-1));
+    const y = h-pad - ((v-min)/range)*(h-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+function fmtDelta(pct){
+  if(pct===null) return `<span class="delta flat">flat</span>`;
+  const cls = Math.abs(pct)<3 ? "flat" : (pct>0 ? "up" : "down");
+  const sign = pct>0 ? "+" : "";
+  return `<span class="delta ${cls}">${sign}${pct.toFixed(0)}%</span>`;
+}
+
+const sorted = [...apps].sort((a,b)=> statusOrder[a.status]-statusOrder[b.status] || b.visitors-a.visitors);
+document.getElementById("roster").innerHTML = sorted.map(a=>`
+  <tr>
+    <td><span class="status"><span class="dot ${a.status}"></span>${statusLabel[a.status]}</span></td>
+    <td class="appname">${a.name}</td>
+    <td class="num">${a.visitors.toLocaleString()}</td>
+    <td class="num">${a.avgTime}</td>
+    <td>${sparkline(a.weekly, COLORS[a.status])}</td>
+    <td class="num">${a.monthly[5].toLocaleString()} ${fmtDelta(a.momPct)}</td>
+    <td class="num">${(a.friction*100).toFixed(1)}%</td>
+    <td class="note">${a.note}</td>
+  </tr>
+`).join("");
+
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = "#8b98a6";
+
+// Growth index chart — only the 5 apps with a steady, non-zero baseline
+const growthApps = apps.filter(a=>a.growthEligible);
+const growthDatasets = growthApps.map(a=>{
+  const base = a.weekly[0];
+  const idx = a.weekly.map(v => v/base*100);
+  const color = a.status==="watch" ? COLORS.watch : COLORS.grey;
+  const width = a.status==="watch" ? 2.4 : 1.4;
+  const order = a.status==="watch" ? 0 : 2;
+  return { label:a.name, data:idx, borderColor:color, backgroundColor:color, borderWidth:width, pointRadius:0, tension:0.25, order };
+});
+new Chart(document.getElementById("growthChart"), {
+  type:"line",
+  data:{ labels:WEEK_LABELS, datasets:growthDatasets },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(ctx)=> `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(0)}` } } },
+    scales:{
+      x:{ grid:{color:"#232b34"}, ticks:{maxRotation:0} },
+      y:{ grid:{color:"#232b34"}, title:{display:true,text:"Index (week 1 = 100)",color:"#5c6774"} }
+    }
+  }
+});
+
+// Low-adoption pilots chart
+const pilotApps = [...apps].filter(a=>!a.growthEligible).sort((a,b)=>b.visitors-a.visitors);
+new Chart(document.getElementById("pilotsChart"), {
+  type:"bar",
+  data:{
+    labels: pilotApps.map(a=>a.name),
+    datasets:[{ data: pilotApps.map(a=>a.visitors), backgroundColor: pilotApps.map(a=>COLORS[a.status]), borderRadius:3, maxBarThickness:22 }]
+  },
+  options:{
+    indexAxis:"y",
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(ctx)=> `${ctx.parsed.x.toLocaleString()} visitors (30d)` } } },
+    scales:{ x:{ grid:{color:"#232b34"} }, y:{ grid:{display:false} } }
+  }
+});
+
+// Acquisition bar chart
+const acqSorted = [...apps].sort((a,b)=>b.monthly[5]-a.monthly[5]);
+new Chart(document.getElementById("acqChart"), {
+  type:"bar",
+  data:{
+    labels: acqSorted.map(a=>a.name),
+    datasets:[{ data: acqSorted.map(a=>a.monthly[5]), backgroundColor: acqSorted.map(a=>COLORS[a.status]), borderRadius:3, maxBarThickness:26 }]
+  },
+  options:{
+    indexAxis:"y",
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(ctx)=> `${ctx.parsed.x.toLocaleString()} new visitors` } } },
+    scales:{
+      x:{ grid:{color:"#232b34"}, title:{display:true,text:"New visitors, August 2026",color:"#5c6774"} },
+      y:{ grid:{display:false} }
+    }
+  }
+});
+</script>
+</body>
+</html>
